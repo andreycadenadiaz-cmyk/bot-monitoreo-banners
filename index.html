@@ -90,7 +90,7 @@
                             <th class="py-3 px-4">Cliente / Retailer</th>
                             <th class="py-3 px-4">Marca</th>
                             <th class="py-3 px-4">Texto / Descripción Banner</th>
-                            <th class="py-3 px-4 text-center">Link Directo</th>
+                            <th class="py-3 px-4 text-center">Acciones</th>
                         </tr>
                     </thead>
                     <tbody id="tablaResultados" class="text-xs divide-y divide-slate-100"></tbody>
@@ -99,14 +99,19 @@
         </section>
     </main>
 
-    <script>
-        let datosGlobales = [
-            { Fecha: "2026-10-01 08:00", Supermercado: "Jumbo", Marca: "Colgate", "Texto / Banner": "Oferta Pack Luminous White 3x2", Enlace: "https://www.jumbo.cl" },
-            { Fecha: "2026-10-01 08:00", Supermercado: "Jumbo", Marca: "Oral-b", "Texto / Banner": "Descuento cepillos eléctricos 20%", Enlace: "https://www.jumbo.cl" },
-            { Fecha: "2026-10-01 08:00", Supermercado: "Lider (Walmart)", Marca: "Colgate", "Texto / Banner": "Especial Cuidado Oral Colgate Total 12", Enlace: "https://www.lider.cl" },
-            { Fecha: "2026-10-01 08:00", Supermercado: "Lider (Walmart)", Marca: "Sensodyne", "Texto / Banner": "Sensodyne Repara & Protege en Promoción", Enlace: "https://www.lider.cl" }
-        ];
+    <!-- Modal para ver Foto del Banner -->
+    <div id="modalImagen" class="fixed inset-0 bg-black/60 hidden items-center justify-center z-50 p-4" onclick="cerrarModal()">
+        <div class="bg-white p-4 rounded-xl max-w-2xl w-full" onclick="event.stopPropagation()">
+            <div class="flex justify-between items-center mb-3">
+                <h4 class="font-bold text-slate-800 text-sm">Captura del Banner Detectado</h4>
+                <button onclick="cerrarModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <img id="imgModal" src="" class="w-full h-auto rounded border border-slate-200" alt="Captura Banner">
+        </div>
+    </div>
 
+    <script>
+        let datosGlobales = [];
         let chartMarcasInstance = null;
         let chartRetailersInstance = null;
 
@@ -136,19 +141,31 @@
                 return;
             }
             tbody.innerHTML = datos.map(d => {
-                const urlExacta = d["Enlace Promocional"] || d.Enlace || d.enlace || '#';
-                const tieneLink = urlExacta !== '#';
+                const urlExacta = d["Enlace Promocional"] || d.Enlace || '#';
+                const tieneFoto = d.Imagen && d.Imagen !== "";
                 return `
                 <tr class="hover:bg-slate-50">
                     <td class="py-3 px-4 text-slate-500">${d.Fecha || '--'}</td>
                     <td class="py-3 px-4 font-semibold text-slate-700">${d.Supermercado || 'Jumbo'}</td>
                     <td class="py-3 px-4"><span class="px-2 py-1 rounded text-xs font-bold ${d.Marca.toLowerCase()==='colgate'?'bg-red-100 text-red-700':'bg-blue-100 text-blue-700'}">${d.Marca}</span></td>
-                    <td class="py-3 px-4 text-slate-600">${d['Texto / Banner'] || d.texto_banner || 'Banner Promocional'}</td>
-                    <td class="py-3 px-4 text-center">
-                        ${tieneLink ? `<a href="${urlExacta}" target="_blank" class="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 font-medium hover:underline"><i class="fa-solid fa-arrow-up-right-from-square"></i> Ir a Promo</a>` : `<span class="text-slate-400">Sin Link</span>`}
+                    <td class="py-3 px-4 text-slate-600">${d['Texto / Banner'] || 'Banner Promocional'}</td>
+                    <td class="py-3 px-4 text-center space-x-2">
+                        ${tieneFoto ? `<button onclick="verFoto('${d.Imagen}')" class="text-emerald-600 font-medium hover:underline"><i class="fa-solid fa-image"></i> Ver Foto</button>` : ''}
+                        <a href="${urlExacta}" target="_blank" class="text-blue-600 font-medium hover:underline"><i class="fa-solid fa-arrow-up-right-from-square"></i> Promo</a>
                     </td>
                 </tr>
             `}).join('');
+        }
+
+        function verFoto(ruta) {
+            document.getElementById('imgModal').src = ruta;
+            document.getElementById('modalImagen').classList.remove('hidden');
+            document.getElementById('modalImagen').classList.add('flex');
+        }
+
+        function cerrarModal() {
+            document.getElementById('modalImagen').classList.add('hidden');
+            document.getElementById('modalImagen').classList.remove('flex');
         }
 
         function renderGraficos(datos) {
