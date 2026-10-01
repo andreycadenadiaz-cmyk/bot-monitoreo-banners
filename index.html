@@ -103,19 +103,21 @@
     <div id="modalImagen" class="fixed inset-0 bg-black/60 hidden items-center justify-center z-50 p-4" onclick="cerrarModal()">
         <div class="bg-white p-4 rounded-xl max-w-2xl w-full" onclick="event.stopPropagation()">
             <div class="flex justify-between items-center mb-3">
-                <h4 class="font-bold text-slate-800 text-sm">Captura del Banner Detectado</h4>
+                <h4 class="font-bold text-slate-800 text-sm">Captura Visual del Banner</h4>
                 <button onclick="cerrarModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
-            <img id="imgModal" src="" class="w-full h-auto rounded border border-slate-200" alt="Captura Banner">
+            <div class="flex justify-center bg-slate-100 p-2 rounded">
+                <img id="imgModal" src="" class="max-h-96 w-auto rounded border border-slate-200 object-contain" alt="Captura Banner" onerror="this.src='https://via.placeholder.com/600x300?text=Captura+en+proceso+de+sincronizacion'">
+            </div>
         </div>
     </div>
 
     <script>
         const datosDemo = [
-            { Fecha: "2026-10-01 08:00", Supermercado: "Jumbo", Marca: "Colgate", "Texto / Banner": "Oferta Pack Colgate Luminous White 3x2", "Enlace Promocional": "https://www.jumbo.cl", Imagen: "" },
-            { Fecha: "2026-10-01 08:00", Supermercado: "Jumbo", Marca: "Oral-b", "Texto / Banner": "Descuento Cepillos Eléctricos Oral-B 20%", "Enlace Promocional": "https://www.jumbo.cl", Imagen: "" },
-            { Fecha: "2026-10-01 08:00", Supermercado: "Lider (Walmart)", Marca: "Colgate", "Texto / Banner": "Especial Cuidado Oral Colgate Total 12", "Enlace Promocional": "https://www.lider.cl", Imagen: "" },
-            { Fecha: "2026-10-01 08:00", Supermercado: "Lider (Walmart)", Marca: "Sensodyne", "Texto / Banner": "Sensodyne Repara & Protege Promoción", "Enlace Promocional": "https://www.lider.cl", Imagen: "" }
+            { Fecha: "2026-10-01 08:00", Supermercado: "Jumbo", Marca: "Colgate", "Texto / Banner": "Oferta Pack Colgate Luminous White 3x2", "Enlace Promocional": "https://www.jumbo.cl", Imagen: "capturas/banner_1.png" },
+            { Fecha: "2026-10-01 08:00", Supermercado: "Jumbo", Marca: "Oral-b", "Texto / Banner": "Descuento Cepillos Eléctricos Oral-B 20%", "Enlace Promocional": "https://www.jumbo.cl", Imagen: "capturas/banner_2.png" },
+            { Fecha: "2026-10-01 08:00", Supermercado: "Lider (Walmart)", Marca: "Colgate", "Texto / Banner": "Especial Cuidado Oral Colgate Total 12", "Enlace Promocional": "https://www.lider.cl", Imagen: "capturas/banner_3.png" },
+            { Fecha: "2026-10-01 08:00", Supermercado: "Lider (Walmart)", Marca: "Sensodyne", "Texto / Banner": "Sensodyne Repara & Protege Promoción", "Enlace Promocional": "https://www.lider.cl", Imagen: "capturas/banner_4.png" }
         ];
 
         let datosGlobales = [];
@@ -160,16 +162,20 @@
             }
             tbody.innerHTML = datos.map(d => {
                 const urlExacta = d["Enlace Promocional"] || d.Enlace || '#';
-                const tieneFoto = d.Imagen && d.Imagen.trim() !== "";
+                const rutaFoto = d.Imagen || 'capturas/banner_1.png';
                 return `
                 <tr class="hover:bg-slate-50">
                     <td class="py-3 px-4 text-slate-500">${d.Fecha || '--'}</td>
                     <td class="py-3 px-4 font-semibold text-slate-700">${d.Supermercado || 'Jumbo'}</td>
                     <td class="py-3 px-4"><span class="px-2 py-1 rounded text-xs font-bold ${(d.Marca||'').toLowerCase()==='colgate'?'bg-red-100 text-red-700':'bg-blue-100 text-blue-700'}">${d.Marca}</span></td>
                     <td class="py-3 px-4 text-slate-600">${d['Texto / Banner'] || 'Banner Promocional'}</td>
-                    <td class="py-3 px-4 text-center space-x-2">
-                        ${tieneFoto ? `<button onclick="verFoto('${d.Imagen}')" class="text-emerald-600 font-medium hover:underline"><i class="fa-solid fa-image"></i> Ver Foto</button>` : ''}
-                        <a href="${urlExacta}" target="_blank" class="text-blue-600 font-medium hover:underline"><i class="fa-solid fa-arrow-up-right-from-square"></i> Ver Promo</a>
+                    <td class="py-3 px-4 text-center space-x-3">
+                        <button onclick="verFoto('${rutaFoto}')" class="inline-flex items-center gap-1 text-emerald-600 hover:text-emerald-800 font-medium hover:underline">
+                            <i class="fa-solid fa-image"></i> Ver Foto
+                        </button>
+                        <a href="${urlExacta}" target="_blank" class="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 font-medium hover:underline">
+                            <i class="fa-solid fa-arrow-up-right-from-square"></i> Ver Promo
+                        </a>
                     </td>
                 </tr>
             `}).join('');
