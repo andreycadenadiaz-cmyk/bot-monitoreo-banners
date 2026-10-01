@@ -21,7 +21,7 @@
                 </div>
                 <div>
                     <h1 class="font-bold text-slate-900 text-lg">Dashboard de Banners Retail</h1>
-                    <p class="text-xs text-slate-500">Monitoreo Competitivo en Tiempo Real • Jumbo.cl & Lider.cl</p>
+                    <p class="text-xs text-slate-500">Monitoreo Competitivo en Tiempo Real • Jumbo Chile & Lider Chile</p>
                 </div>
             </div>
             <div class="flex items-center space-x-3">
@@ -59,7 +59,7 @@
                 <div class="h-64"><canvas id="chartMarcas"></canvas></div>
             </div>
             <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-                <h3 class="text-sm font-bold text-slate-700 mb-4">Distribución por Retailer</h3>
+                <h3 class="text-sm font-bold text-slate-700 mb-4">Distribución por Cliente / Retailer</h3>
                 <div class="h-64"><canvas id="chartRetailers"></canvas></div>
             </div>
         </section>
@@ -76,9 +76,9 @@
                         <option value="Pepsodent">Pepsodent</option>
                     </select>
                     <select id="filterRetailer" onchange="filtrarTabla()" class="text-xs border border-slate-300 rounded-lg px-3 py-2 bg-slate-50 font-medium">
-                        <option value="TODOS">Todos los Retailers</option>
-                        <option value="Jumbo">Jumbo</option>
-                        <option value="Lider (Walmart)">Lider (Walmart)</option>
+                        <option value="TODOS">Todos los Clientes</option>
+                        <option value="Jumbo">Jumbo Chile</option>
+                        <option value="Lider (Walmart)">Lider Chile (Walmart)</option>
                     </select>
                 </div>
             </div>
@@ -87,10 +87,10 @@
                     <thead>
                         <tr class="bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase">
                             <th class="py-3 px-4">Fecha</th>
-                            <th class="py-3 px-4">Retailer</th>
+                            <th class="py-3 px-4">Cliente / Retailer</th>
                             <th class="py-3 px-4">Marca</th>
                             <th class="py-3 px-4">Texto / Descripción Banner</th>
-                            <th class="py-3 px-4 text-center">Acción</th>
+                            <th class="py-3 px-4 text-center">Link Directo</th>
                         </tr>
                     </thead>
                     <tbody id="tablaResultados" class="text-xs divide-y divide-slate-100"></tbody>
@@ -106,6 +106,9 @@
             { Fecha: "2026-10-01 08:00", Supermercado: "Lider (Walmart)", Marca: "Colgate", "Texto / Banner": "Especial Cuidado Oral Colgate Total 12", Enlace: "https://www.lider.cl" },
             { Fecha: "2026-10-01 08:00", Supermercado: "Lider (Walmart)", Marca: "Sensodyne", "Texto / Banner": "Sensodyne Repara & Protege en Promoción", Enlace: "https://www.lider.cl" }
         ];
+
+        let chartMarcasInstance = null;
+        let chartRetailersInstance = null;
 
         async function cargarDatos() {
             try {
@@ -128,21 +131,32 @@
 
         function renderTabla(datos) {
             const tbody = document.getElementById('tablaResultados');
-            tbody.innerHTML = datos.map(d => `
+            if(datos.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="py-6 text-center text-slate-400">No se encontraron banners con los filtros seleccionados.</td></tr>`;
+                return;
+            }
+            tbody.innerHTML = datos.map(d => {
+                const urlExacta = d["Enlace Promocional"] || d.Enlace || d.enlace || '#';
+                const tieneLink = urlExacta !== '#';
+                return `
                 <tr class="hover:bg-slate-50">
                     <td class="py-3 px-4 text-slate-500">${d.Fecha || '--'}</td>
                     <td class="py-3 px-4 font-semibold text-slate-700">${d.Supermercado || 'Jumbo'}</td>
                     <td class="py-3 px-4"><span class="px-2 py-1 rounded text-xs font-bold ${d.Marca.toLowerCase()==='colgate'?'bg-red-100 text-red-700':'bg-blue-100 text-blue-700'}">${d.Marca}</span></td>
                     <td class="py-3 px-4 text-slate-600">${d['Texto / Banner'] || d.texto_banner || 'Banner Promocional'}</td>
-                    <td class="py-3 px-4 text-center"><a href="${d.Enlace || d.enlace || '#'}" target="_blank" class="text-blue-600 hover:underline"><i class="fa-solid fa-arrow-up-right-from-square"></i> Ver</a></td>
+                    <td class="py-3 px-4 text-center">
+                        ${tieneLink ? `<a href="${urlExacta}" target="_blank" class="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 font-medium hover:underline"><i class="fa-solid fa-arrow-up-right-from-square"></i> Ir a Promo</a>` : `<span class="text-slate-400">Sin Link</span>`}
+                    </td>
                 </tr>
-            `).join('');
+            `}).join('');
         }
 
         function renderGraficos(datos) {
             const marcas = {};
             datos.forEach(d => marcas[d.Marca] = (marcas[d.Marca] || 0) + 1);
-            new Chart(document.getElementById('chartMarcas'), {
+            
+            if(chartMarcasInstance) chartMarcasInstance.destroy();
+            chartMarcasInstance = new Chart(document.getElementById('chartMarcas'), {
                 type: 'bar',
                 data: { labels: Object.keys(marcas), datasets: [{ data: Object.values(marcas), backgroundColor: ['#dc2626', '#2563eb', '#059669', '#d97706'] }] },
                 options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
@@ -150,7 +164,9 @@
 
             const retail = {};
             datos.forEach(d => retail[d.Supermercado||'Jumbo'] = (retail[d.Supermercado||'Jumbo'] || 0) + 1);
-            new Chart(document.getElementById('chartRetailers'), {
+            
+            if(chartRetailersInstance) chartRetailersInstance.destroy();
+            chartRetailersInstance = new Chart(document.getElementById('chartRetailers'), {
                 type: 'doughnut',
                 data: { labels: Object.keys(retail), datasets: [{ data: Object.values(retail), backgroundColor: ['#16a34a', '#0284c7'] }] },
                 options: { responsive: true, maintainAspectRatio: false }
@@ -162,9 +178,9 @@
             const r = document.getElementById('filterRetailer').value;
             const filtrados = datosGlobales.filter(d => 
                 (m === 'TODAS' || d.Marca.toLowerCase() === m.toLowerCase()) &&
-                (r === 'TODOS' || (d.Supermercado || 'Jumbo').toLowerCase() === r.toLowerCase())
+                (r === 'TODOS' || (d.Supermercado || 'Jumbo').toLowerCase().includes(r.toLowerCase()))
             );
-            renderTabla(filtrados);
+            actualizarDashboard(filtrados);
         }
 
         window.onload = cargarDatos;
