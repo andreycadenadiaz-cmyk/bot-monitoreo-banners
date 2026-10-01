@@ -126,7 +126,7 @@
 
         async function cargarDatos() {
             try {
-                const res = await fetch('reporte_banners.json');
+              const res = await fetch('reporte_banners.json?v=' + new Date().getTime());
                 if (res.ok) {
                     const data = await res.json();
                     if (Array.isArray(data) && data.length > 0) {
