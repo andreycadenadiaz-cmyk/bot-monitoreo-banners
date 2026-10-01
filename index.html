@@ -170,21 +170,25 @@
             }
             tbody.innerHTML = datos.map(d => {
                 const urlExacta = d["Enlace Promocional"] || d.Enlace || '#';
-                const tieneFoto = d.Imagen && d.Imagen.trim() !== "";
-                const rutaFoto = tieneFoto ? d.Imagen : 'https://via.placeholder.com/600x300?text=Imagen+No+Disponible';
-                
-                return `
-                <tr class="hover:bg-slate-50">
-                    <td class="py-3 px-4 text-slate-500">${d.Fecha || '--'}</td>
-                    <td class="py-3 px-4 font-semibold text-slate-700">${d.Supermercado || 'Jumbo'}</td>
-                    <td class="py-3 px-4"><span class="px-2 py-1 rounded text-xs font-bold ${(d.Marca||'').toLowerCase()==='colgate'?'bg-red-100 text-red-700':'bg-blue-100 text-blue-700'}">${d.Marca}</span></td>
-                    <td class="py-3 px-4 text-slate-600">${d['Texto / Banner'] || 'Banner Promocional'}</td>
-                    <td class="py-3 px-4 text-center space-x-2">
-                        ${tieneFoto ? `<button onclick="verFoto('${rutaFoto}')" class="inline-flex items-center gap-1 text-emerald-600 hover:text-emerald-800 font-medium hover:underline"><i class="fa-solid fa-image"></i> Ver Foto</button>` : ''}
-                        <a href="${urlExacta}" target="_blank" class="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 font-medium hover:underline"><i class="fa-solid fa-arrow-up-right-from-square"></i> Ver Promo</a>
-                    </td>
-                </tr>
-            `}).join('');
+           const rutaFoto = (d.Imagen && d.Imagen.trim() !== "") ? d.Imagen : 'https://via.placeholder.com/600x300?text=Captura+de+Banner+Retail';
+
+return `
+<tr class="hover:bg-slate-50">
+    <td class="py-3 px-4 text-slate-500">${d.Fecha || '--'}</td>
+    <td class="py-3 px-4 font-semibold text-slate-700">${d.Supermercado || 'Jumbo'}</td>
+    <td class="py-3 px-4"><span class="px-2 py-1 rounded text-xs font-bold ${(d.Marca||'').toLowerCase()==='colgate'?'bg-red-100 text-red-700':'bg-blue-100 text-blue-700'}">${d.Marca}</span></td>
+    <td class="py-3 px-4 text-slate-600">${d['Texto / Banner'] || 'Banner Promocional'}</td>
+    <td class="py-3 px-4 text-center space-x-3">
+        <button onclick="verFoto('${rutaFoto}')" class="inline-flex items-center gap-1 text-emerald-600 hover:text-emerald-800 font-medium hover:underline">
+            <i class="fa-solid fa-image"></i> Ver Foto
+        </button>
+        <a href="${urlExacta}" target="_blank" class="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 font-medium hover:underline">
+            <i class="fa-solid fa-arrow-up-right-from-square"></i> Ver Promo
+        </a>
+    </td>
+</tr>
+`
+            }).join('');
         }
 
         function verFoto(ruta) {
