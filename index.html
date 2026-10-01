@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Monitoreo de Banners - Retail Intelligence</title>
+    <title>Dashboard de Banners Retail - Monitoreo en Tiempo Real</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
@@ -34,6 +34,7 @@
     </header>
 
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+        <!-- KPIs -->
         <section class="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
                 <p class="text-xs font-medium text-slate-500 uppercase">Total Banners Hallados</p>
@@ -53,6 +54,7 @@
             </div>
         </section>
 
+        <!-- Gráficos -->
         <section class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
                 <h3 class="text-sm font-bold text-slate-700 mb-4">Presencia por Marca</h3>
@@ -64,6 +66,7 @@
             </div>
         </section>
 
+        <!-- Tabla -->
         <section class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
             <div class="p-5 border-b border-slate-200 flex flex-col sm:flex-row justify-between items-center gap-4">
                 <h3 class="text-sm font-bold text-slate-700">Detalle de Banners Capturados</h3>
@@ -93,13 +96,15 @@
                             <th class="py-3 px-4 text-center">Acciones</th>
                         </tr>
                     </thead>
-                    <tbody id="tablaResultados" class="text-xs divide-y divide-slate-100"></tbody>
+                    <tbody id="tablaResultados" class="text-xs divide-y divide-slate-100">
+                        <tr><td colspan="5" class="py-8 text-center text-slate-400"><i class="fa-solid fa-spinner animate-spin text-lg mb-2"></i><br>Cargando información...</td></tr>
+                    </tbody>
                 </table>
             </div>
         </section>
     </main>
 
-    <!-- Modal para ver Captura del Banner -->
+    <!-- Modal para ver Captura -->
     <div id="modalImagen" class="fixed inset-0 bg-black/60 hidden items-center justify-center z-50 p-4" onclick="cerrarModal()">
         <div class="bg-white p-4 rounded-xl max-w-2xl w-full" onclick="event.stopPropagation()">
             <div class="flex justify-between items-center mb-3">
@@ -107,17 +112,17 @@
                 <button onclick="cerrarModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
             <div class="flex justify-center bg-slate-100 p-2 rounded">
-                <img id="imgModal" src="" class="max-h-96 w-auto rounded border border-slate-200 object-contain" alt="Captura Banner" onerror="this.src='https://via.placeholder.com/600x300?text=Captura+en+proceso+de+sincronizacion'">
+                <img id="imgModal" src="" class="max-h-96 w-auto rounded border border-slate-200 object-contain" alt="Captura Banner" onerror="this.onerror=null; this.src='https://via.placeholder.com/600x300?text=Captura+en+sincronizacion';">
             </div>
         </div>
     </div>
 
     <script>
         const datosDemo = [
-            { Fecha: "2026-10-01 08:00", Supermercado: "Jumbo", Marca: "Colgate", "Texto / Banner": "Oferta Pack Colgate Luminous White 3x2", "Enlace Promocional": "https://www.jumbo.cl", Imagen: "capturas/banner_1.png" },
-            { Fecha: "2026-10-01 08:00", Supermercado: "Jumbo", Marca: "Oral-b", "Texto / Banner": "Descuento Cepillos Eléctricos Oral-B 20%", "Enlace Promocional": "https://www.jumbo.cl", Imagen: "capturas/banner_2.png" },
-            { Fecha: "2026-10-01 08:00", Supermercado: "Lider (Walmart)", Marca: "Colgate", "Texto / Banner": "Especial Cuidado Oral Colgate Total 12", "Enlace Promocional": "https://www.lider.cl", Imagen: "capturas/banner_3.png" },
-            { Fecha: "2026-10-01 08:00", Supermercado: "Lider (Walmart)", Marca: "Sensodyne", "Texto / Banner": "Sensodyne Repara & Protege Promoción", "Enlace Promocional": "https://www.lider.cl", Imagen: "capturas/banner_4.png" }
+            { Fecha: "2026-10-01 08:00", Supermercado: "Jumbo", Marca: "Colgate", "Texto / Banner": "Oferta Pack Colgate Luminous White 3x2", "Enlace Promocional": "https://www.jumbo.cl", Imagen: "" },
+            { Fecha: "2026-10-01 08:00", Supermercado: "Jumbo", Marca: "Oral-b", "Texto / Banner": "Descuento Cepillos Eléctricos Oral-B 20%", "Enlace Promocional": "https://www.jumbo.cl", Imagen: "" },
+            { Fecha: "2026-10-01 08:00", Supermercado: "Lider (Walmart)", Marca: "Colgate", "Texto / Banner": "Especial Cuidado Oral Colgate Total 12", "Enlace Promocional": "https://www.lider.cl", Imagen: "" },
+            { Fecha: "2026-10-01 08:00", Supermercado: "Lider (Walmart)", Marca: "Sensodyne", "Texto / Banner": "Sensodyne Repara & Protege Promoción", "Enlace Promocional": "https://www.lider.cl", Imagen: "" }
         ];
 
         let datosGlobales = [];
@@ -126,7 +131,9 @@
 
         async function cargarDatos() {
             try {
-              const res = await fetch('reporte_banners.json?v=' + new Date().getTime());
+                // Forzar lectura fresca con timestamp único
+                const timestamp = new Date().getTime();
+                const res = await fetch('reporte_banners.json?t=' + timestamp);
                 if (res.ok) {
                     const data = await res.json();
                     if (Array.isArray(data) && data.length > 0) {
@@ -138,6 +145,7 @@
                     datosGlobales = datosDemo;
                 }
             } catch (e) {
+                console.warn('Cargando vista base por error de red:', e);
                 datosGlobales = datosDemo;
             }
             actualizarDashboard(datosGlobales);
@@ -162,20 +170,18 @@
             }
             tbody.innerHTML = datos.map(d => {
                 const urlExacta = d["Enlace Promocional"] || d.Enlace || '#';
-                const rutaFoto = d.Imagen || 'capturas/banner_1.png';
+                const tieneFoto = d.Imagen && d.Imagen.trim() !== "";
+                const rutaFoto = tieneFoto ? d.Imagen : 'https://via.placeholder.com/600x300?text=Imagen+No+Disponible';
+                
                 return `
                 <tr class="hover:bg-slate-50">
                     <td class="py-3 px-4 text-slate-500">${d.Fecha || '--'}</td>
                     <td class="py-3 px-4 font-semibold text-slate-700">${d.Supermercado || 'Jumbo'}</td>
                     <td class="py-3 px-4"><span class="px-2 py-1 rounded text-xs font-bold ${(d.Marca||'').toLowerCase()==='colgate'?'bg-red-100 text-red-700':'bg-blue-100 text-blue-700'}">${d.Marca}</span></td>
                     <td class="py-3 px-4 text-slate-600">${d['Texto / Banner'] || 'Banner Promocional'}</td>
-                    <td class="py-3 px-4 text-center space-x-3">
-                        <button onclick="verFoto('${rutaFoto}')" class="inline-flex items-center gap-1 text-emerald-600 hover:text-emerald-800 font-medium hover:underline">
-                            <i class="fa-solid fa-image"></i> Ver Foto
-                        </button>
-                        <a href="${urlExacta}" target="_blank" class="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 font-medium hover:underline">
-                            <i class="fa-solid fa-arrow-up-right-from-square"></i> Ver Promo
-                        </a>
+                    <td class="py-3 px-4 text-center space-x-2">
+                        ${tieneFoto ? `<button onclick="verFoto('${rutaFoto}')" class="inline-flex items-center gap-1 text-emerald-600 hover:text-emerald-800 font-medium hover:underline"><i class="fa-solid fa-image"></i> Ver Foto</button>` : ''}
+                        <a href="${urlExacta}" target="_blank" class="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 font-medium hover:underline"><i class="fa-solid fa-arrow-up-right-from-square"></i> Ver Promo</a>
                     </td>
                 </tr>
             `}).join('');
