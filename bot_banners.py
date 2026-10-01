@@ -12,14 +12,12 @@ Sitios = [
     {"nombre": "Lider (Walmart)", "url": "https://www.lider.cl/"}
 ]
 
-# Crear carpeta para fotos si no existe
 os.makedirs("capturas", exist_ok=True)
 
 async def monitorear_banners():
     async with async_playwright() as p:
         print("Iniciando navegador...")
         browser = await p.chromium.launch(headless=True)
-        # Configurar pantalla grande para capturar bien los banners
         context = await browser.new_context(viewport={"width": 1440, "height": 900})
         page = await context.new_page()
         
@@ -30,18 +28,18 @@ async def monitorear_banners():
         for sitio in Sitios:
             print(f"Navegando a {sitio['nombre']} ({sitio['url']})...")
             try:
-                await page.goto(sitio["url"], wait_until="domcontentloaded", timeout=60000)
-                await page.wait_for_timeout(4000) # Esperar a que cargue el carrusel
+                await page.goto(sitio["url"], wait_until="networkidle", timeout=60000)
+                await page.wait_for_timeout(3000)
                 
-                # Seleccionar solo enlaces e imágenes que estén realmente visibles
-                banners_elementos = await page.query_selector_all("a, div[class*='banner'], div[class*='slider'], img")
+                # Simular scroll para forzar la carga de componentes dinámicos
+                await page.evaluate("window.scrollBy(0, 600)")
+                await page.wait_for_timeout(2000)
+
+                # Buscar en todos los elementos interactivos o de imagen
+                banners_elementos = await page.query_selector_all("a, img, div[class*='banner'], div[class*='slider'], div[class*='carousel']")
                 
                 for elem in banners_elementos:
-                    # Validar si el elemento es visible en pantalla
-                    if not await elem.is_visible():
-                        continue
-
-                    texto = await elem.inner_text()
+                    texto = await elem.inner_text() or ""
                     alt = await elem.get_attribute("alt") or ""
                     href = await elem.get_attribute("href") or ""
                     src = await elem.get_attribute("src") or ""
@@ -50,16 +48,14 @@ async def monitorear_banners():
 
                     for marca in MARCAS:
                         if marca in contenido_comb:
-                            # Asegurar URL absoluta
                             url_completa = href
                             if href and not href.startswith("http"):
                                 url_completa = sitio["url"].rstrip("/") + "/" + href.lstrip("/")
 
-                            # Tomar foto del elemento banner
                             nombre_foto = f"capturas/banner_{contador_img}.png"
                             try:
                                 await elem.screenshot(path=nombre_foto)
-                                foto_url = f"capturas/banner_{contador_img}.png"
+                                foto_url = nombre_foto
                             except Exception:
                                 foto_url = ""
 
@@ -67,23 +63,30 @@ async def monitorear_banners():
                                 "Fecha": fecha_actual,
                                 "Supermercado": sitio["nombre"],
                                 "Marca": marca.capitalize(),
-                                "Texto / Banner": texto.strip() or alt.strip() or "Banner promocional visual",
+                                "Texto / Banner": texto.strip() or alt.strip() or f"Banner {marca.capitalize()} detectado",
                                 "Enlace Promocional": url_completa or sitio["url"],
                                 "Imagen": foto_url
                             })
                             contador_img += 1
-                            break # Evitar duplicados por la misma marca en el mismo elemento
+                            break
             except Exception as e:
                 print(f"Error al revisar {sitio['nombre']}: {e}")
 
         await browser.close()
         
-        # Guardar en JSON para la Web
-        with open("reporte_banners.json", "w", encoding="utf-8") as f:
-            json.dump(resultados, f, ensure_ascii=False, indent=4)
-            print("✓ Guardado 'reporte_banners.json' con capturas.")
+        # Eliminar duplicados en base a Supermercado + Marca + Texto
+        if resultados:
+            df = pd.DataFrame(resultados).drop_duplicates(subset=["Supermercado", "Marca", "Texto / Banner"])
+            resultados_limpios = df.to_dict(orient="records")
+        else:
+            resultados_limpios = []
 
-        # Guardar en Histórico
+        # 1. Guardar en JSON para el Dashboard Web
+        with open("reporte_banners.json", "w", encoding="utf-8") as f:
+            json.dump(resultados_limpios, f, ensure_ascii=False, indent=4)
+            print("✓ Guardado 'reporte_banners.json' correctamente.")
+
+        # 2. Acumular en el Histórico
         historico = []
         if os.path.exists("historico_banners.json"):
             try:
@@ -92,11 +95,11 @@ async def monitorear_banners():
             except Exception:
                 historico = []
         
-        historico.extend(resultados)
+        historico.extend(resultados_limpios)
         with open("historico_banners.json", "w", encoding="utf-8") as f:
             json.dump(historico, f, ensure_ascii=False, indent=4)
 
-        print(f"\n¡Éxito! Se detectaron y fotografiaron {len(resultados)} banners.")
+        print(f"\n¡Proceso finalizado! Se registraron {len(resultados_limpios)} banners.")
 
 if __name__ == "__main__":
     asyncio.run(monitorear_banners())
